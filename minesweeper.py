@@ -242,6 +242,7 @@ class Minesweeper:
 ### END OF CLASSES ###
 
 def main():
+    print("Hello Vasad!")
     # create Tk instance
     window = Tk()
     # set program title
