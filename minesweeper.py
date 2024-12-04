@@ -33,7 +33,23 @@ BTN_FLAG = "<Button-2>" if platform.system() == 'Darwin' else "<Button-3>"
 # ------------------ Model ------------------
 
 class Cell:
-    """Model: Represents a single cell on the Minesweeper board."""
+    """
+    Model: Represents a single cell on the Minesweeper board
+    
+    @param self:    The Cell instance.
+    @param x:       The x-coordinate value for the cell.
+    @param y:       The y-coordinate value for the cell.
+    @Requires(int(x) >= 0 & x < self.model.SIZE_X & 
+        int(y) >= 0 & y < self.model.SIZE_Y)
+    @Ensures(
+        self.x = x and
+        self.y = y and
+        self.is_mine = False and
+        self.is_treasure = False and 
+        self.state = STATE_DEFAULT and
+        self.adjacent_mines = 0
+    )
+    """
     def __init__(self, x, y):
         self.x = x
         self.y = y
@@ -134,7 +150,7 @@ class GameModel:
         self.SIZE_X == 8 and
         self.SIZE_Y == 8 and
         sum(1 for cell in self.cells.values() if cell.is_mine) == num_mines_file and
-        sum(1 for cell in self.cells.values() if cell.is_treasure) <= self.num_treasures and
+        sum(1 for cell in self.cells.values() if cell.is_treasure) <= num_treasures_file and
         all(
             cell.adjacent_mines == self.count_adjacent_mines(cell.x, cell.y)
             for cell in self.cells.values()
@@ -143,17 +159,21 @@ class GameModel:
         )
     """
     def setup_board_from_file(self, file_name):
+        # Add the '.csv' extention if necessary
         if len(file_name) < 4:
             file_name = file_name + '.csv'
         elif (len(file_name) >= 4) & (file_name[len(file_name) - 4:] != '.csv'):
             file_name = file_name + '.csv'
         print(file_name)
-        # Initialize the board with cells
         
+        # Create file path from file name
         file_path = os.path.join("tests", file_name)
+        
+        # Initiate the number of mines and treasures in the file
         num_mines_file = 0;
         num_treasures_file = 0;
         
+        # Map values from CSV file to board
         try:
             with open(file_path, mode='r', encoding='utf-8-sig') as csvfile:
                 reader = csv.reader(csvfile)  # Use csv.reader instead of DictReader for raw cells
@@ -175,7 +195,8 @@ class GameModel:
                                 num_treasures_file += 1
                             self.cells[(row_index, col_index)] = cell
                         except ValueError: # Non-integer value found
-                            print("Invalid tile detected. Generating random board.")
+                            message = "Invalid tile detected. Generating random board."
+                            messagebox.showinfo("Invalid File", message)
                             self.setup_board()
                             return
                 
@@ -186,12 +207,12 @@ class GameModel:
                 # Calculate adjacent mines for each cell
                 for cell in self.cells.values():
                     cell.adjacent_mines = self.count_adjacent_mines(cell.x, cell.y)
-        except FileNotFoundError:
+        except FileNotFoundError: #File not found
             message = "Cannot find file. Generating random board instead."
             print(message)
             messagebox.showinfo("File Not Found", message)
             self.setup_board()
-        except:
+        except: #Problem reading the file
             message = "Cannot open file. Generating random board instead."
             messagebox.showinfo("Problem With File", message)
             self.setup_board()
@@ -247,7 +268,6 @@ class GameController:
             level = level.lower()
         if level not in LEVELS:
             level = 'beginner'  # Default to beginner if invalid input
-
 
         self.model = GameModel(file_name, level)
         
@@ -419,7 +439,18 @@ class GUIView:
 # ----------- Text-based View (Newly Implemented) ------------
 
 class TextView:
-    """View: Handles the text-based interface."""
+    """
+    View: Handles the text-based interface.
+    
+    @param self:        The TextView intance.
+    @param controller:  The GameController instance.
+    @param model:       The GameModel instance.
+    @Requires(controller is not None and model is not None)
+    @Ensures(
+        self.controller = controller and
+        self.model = model
+    )
+    """
     def __init__(self, controller, model):
         self.controller = controller
         self.model = model
@@ -455,6 +486,32 @@ class TextView:
             else:
                 print("Game Over!")
 
+    """
+    Displays the game board based on how the board is set up and which
+    values which cells the user has clicked.
+    
+    @param self: The TextView instance.
+    @Requires(
+        self.model is not None &
+        hasattr(self.model, 'SIZE_X') &
+        hasattr(self.model, 'SIZE_Y') &
+        hasattr(self.model, 'cells') &
+        all((x, y) in self.model.cells for x in range(self.model.SIZE_X) 
+            for y in range(self.model.SIZE_Y))
+    )
+    @Ensures(
+        all(
+            (cell.state == STATE_DEFAULT or 
+            cell.state == STATE_FLAGGED or 
+            cell.state == STATE_CLICKED) 
+            for cell in self.model.cells.values()
+        ) &
+        all(
+            (cell.is_mine or cell.is_treasure or cell.adjacent_mines >= 0)
+            for cell in self.model.cells.values()
+        )
+    )
+    """
     def display_board(self):
         print("Current Board:")
         for x in range(self.model.SIZE_X):
