@@ -3,7 +3,6 @@
 
 from tkinter import *
 from tkinter import messagebox
-import tkinter as tk
 from collections import deque
 import random
 import platform
@@ -150,6 +149,7 @@ class GameModel:
             file_name (str): The name of the CSV file containing board setup data.
 
         Preconditions:
+            - self.level must be "beginner".
             - file_name is a valid path to a CSV file.
             - The CSV file has 8 rows and 8 columns.
             - Each cell in the CSV file contains 0, 1, or 2.
@@ -210,7 +210,7 @@ class GameModel:
                                 return
                             self.cells[(row_index, col_index)] = cell
                         except ValueError:
-                            message = "Invalid tile detected."
+                            message = "Invalid tile detected. Generating random board."
                             messagebox.showinfo("Invalid File", message)
                             self.invalid_board = True
                             return
@@ -223,12 +223,14 @@ class GameModel:
                 for cell in self.cells.values():
                     cell.adjacent_mines = self.count_adjacent_mines(cell.x, cell.y)
 
+                
+
         except FileNotFoundError:
             message = "Cannot find file."
             messagebox.showinfo("File Not Found", message)
             self.invalid_board = True
         except Exception as e:
-            message = f"Cannot open file. Error: {str(e)}."
+            message = f"Cannot open file. Error: {str(e)}. Generating random board instead."
             messagebox.showinfo("Problem With File", message)
             self.invalid_board = True
 
@@ -279,16 +281,6 @@ class GameModel:
             if 0 <= nx < self.SIZE_X and 0 <= ny < self.SIZE_Y:
                 neighbors.append(self.cells[(nx, ny)])
         return neighbors
-
-    def validate_test_board(self):
-        """
-        Validates the test board according to the specified criteria.
-
-        Returns:
-            bool: True if the board is valid, False otherwise.
-        """
-        # Validation logic as per assignment criteria
-        # ...
 
 # ------------------ Controller ------------------
 
@@ -528,7 +520,8 @@ class GUIView:
                 button.config(image=self.images["wrong"])
             elif cell.is_treasure and cell.state != STATE_CLICKED:
                 button.config(image=self.images["treasure"])
-
+        self.tk.update()
+        
         if treasure_found:
             msg = "You found the treasure! You Win! Play again?"
         else:
