@@ -150,7 +150,7 @@ class GameModel:
 
         Preconditions:
             - self.level must be "beginner".
-            - file_name is a valid path to a CSV file.
+            - file_name is not None and is a valid name of a CSV file.
             - The CSV file has 8 rows and 8 columns.
             - Each cell in the CSV file contains 0, 1, or 2.
             - The board meets the specified criteria for a test board.
@@ -210,7 +210,7 @@ class GameModel:
                                 return
                             self.cells[(row_index, col_index)] = cell
                         except ValueError:
-                            message = "Invalid tile detected. Generating random board."
+                            message = "Invalid tile detected."
                             messagebox.showinfo("Invalid File", message)
                             self.invalid_board = True
                             return
